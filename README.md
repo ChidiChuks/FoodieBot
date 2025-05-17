@@ -1,73 +1,70 @@
-# Welcome to your Lovable project
+# 🍔 FoodieBot
 
-## Project info
+**FoodieBot** is a modern, AI-powered restaurant chatbot interface designed to revolutionize food ordering and delivery. Inspired by popular apps like UberEats and DoorDash, FoodieBot combines intuitive design with conversational AI to deliver a seamless ordering experience.
 
-**URL**: https://lovable.dev/projects/c017f298-72b6-4f41-9de2-a275f3ceb682
+## 🚀 Project Overview
 
-## How can I edit this code?
+This project is focused on building a beautiful and intelligent front-end interface for food delivery. Users can interact with an AI chatbot to browse menus, place orders, track deliveries, and enjoy a frictionless mobile-first experience.
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## 🎯 Key Features
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c017f298-72b6-4f41-9de2-a275f3ceb682) and start prompting.
+- 🤖 **AI Chatbot Interface**  
+  Engage with a smart conversational agent to find and order food effortlessly.
 
-Changes made via Lovable will be committed automatically to this repo.
+- 📋 **Restaurant Menu Display**  
+  Showcasing categories of delicious meals with high-quality imagery and clean layout.
 
-**Use your preferred IDE**
+- 🛒 **Cart Functionality**  
+  Add/remove items, update quantities, and view order summaries in real-time.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- 📍 **Order Tracking**  
+  Visual indicators to show delivery progress after placing an order.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- ⚡ **Quick Replies & Suggestions**  
+  Predefined response buttons to streamline conversation flow and user actions.
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🎨 Design & UI Inspiration
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- **Clean, minimalist layout**  
+- **Mobile-responsive** to adapt across phones, tablets, and desktops  
+- **Smooth animations** (fade, slide effects) for modern interactions  
+- **High-resolution food images** for visual appeal
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Color Palette
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+| Element       | Color        | Hex       |
+|---------------|--------------|-----------|
+| Primary       | Purple       | `#8B5CF6` |
+| Secondary     | Muted Purple | `#7E69AB` |
+| Accent        | Soft Green   | *(TBD)*   |
+| Background    | Light Purple Gradients on White | — |
+| Text          | Dark Gray    | `#333333` |
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🛠️ Tech Stack
 
-**Use GitHub Codespaces**
+- **React** – Frontend library
+- **CSS/SCSS or TailwindCSS** – For styling
+- **Framer Motion / React Spring** – For animations *(optional)*
+- **DialogflowCX / OpenAI** – For chatbot integration *(future feature)*
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## 📬 Contact
+- Made with ❤️ by Chidiebere Chukwuma
+- For questions or collaborations: chukschiboy@gmail.com
 
-This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 📦 Setup & Installation
 
-## How can I deploy this project?
+```bash
+git clone https://github.com/ChidiChuks/FoodieBot.git
+cd FoodieBot
+npm install
+npm start
 
-Simply open [Lovable](https://lovable.dev/projects/c017f298-72b6-4f41-9de2-a275f3ceb682) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
