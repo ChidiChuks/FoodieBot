@@ -2,6 +2,11 @@
 
 **FoodieBot** is a modern, AI-powered restaurant chatbot interface designed to revolutionize food ordering and delivery. Inspired by popular apps like UberEats and DoorDash, FoodieBot combines intuitive design with conversational AI to deliver a seamless ordering experience.
 
+![image](https://github.com/user-attachments/assets/ccc11e9f-e51d-4fc4-9b37-fcdaf757d9ec)
+![image](https://github.com/user-attachments/assets/e669c876-1ee3-4621-94bc-16d09950d5de)
+
+
+
 ## 🚀 Project Overview
 
 This project is focused on building a beautiful and intelligent front-end interface for food delivery. Users can interact with an AI chatbot to browse menus, place orders, track deliveries, and enjoy a frictionless mobile-first experience.
