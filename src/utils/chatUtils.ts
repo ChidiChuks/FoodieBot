@@ -13,7 +13,7 @@ export const getCurrentTime = () => {
 // Welcome messages from the chatbot
 export const getWelcomeMessages = () => [
   {
-    message: "👋 Hello! I'm ChidieBot, your personal food ordering assistant. What can I help you with today?",
+    message: "👋 Hello! I'm FoodieBot, your personal food ordering assistant. What can I help you with today?",
     isUser: false,
     timestamp: getCurrentTime(),
   },

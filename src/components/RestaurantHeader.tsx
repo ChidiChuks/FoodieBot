@@ -10,7 +10,7 @@ const RestaurantHeader = () => {
           <MessageSquare className="h-6 w-6 text-restaurant-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">ChidieBot</h1>
+          <h1 className="text-2xl font-bold">FoodieBot</h1>
           <p className="text-white/80 text-sm">AI-powered food ordering assistant</p>
         </div>
       </div>
