@@ -65,6 +65,22 @@ export const generateResponse = (userInput: string) => {
       .join(', ');
     return `For salads, we offer: ${salads}. They're fresh and delicious!`;
   }
+
+  if (input.includes('drink')) {
+    const drinks = foodMenu
+      .filter(item => item.category === 'drinks')
+      .map(item => item.name)
+      .join(', ');
+    return `For drinks, we offer: ${drinks}. They're fresh and chilled!`;
+  }
+
+  if (input.includes('side')) {
+    const sides = foodMenu
+      .filter(item => item.category === 'sides')
+      .map(item => item.name)
+      .join(', ');
+    return `For sides, we offer: ${sides}. They're fresh and delicious!`;
+  }
   
   // Check for order related queries
   if (input.includes('order') || input.includes('checkout')) {
@@ -94,12 +110,12 @@ export const generateResponse = (userInput: string) => {
 export const generateSuggestions = (lastMessage: string) => {
   const message = lastMessage.toLowerCase();
   
-  if (message.includes('menu') || message.includes('food')) {
+  if (message.includes('menu') || message.includes('food') || message.includes('drink')) {
     return ["Show me burgers", "Pizza options", "Vegetarian items", "What drinks do you have?"];
   }
   
-  if (message.includes('burger') || message.includes('pizza') || message.includes('salad')) {
-    return ["Add to cart", "Show me sides", "Any drinks?", "Tell me more"];
+  if (message.includes('burger') || message.includes('pizza') || message.includes('salad') || message.includes('drink') || message.includes('side')) {
+    return ["Show me sides", "Any drinks?", "Tell me more", "Add to cart"];
   }
   
   if (message.includes('order') || message.includes('delivery')) {
