@@ -1,5 +1,9 @@
-
 import React, { useState, useEffect, useRef } from 'react';
+// import { ChatOpenAI } from 'langchain/chat_models/openai';
+import { ChatOpenAI } from '@langchain/openai';
+// import { HumanMessage, SystemMessage, AIMessage } from 'langchain/schema';
+import { HumanMessage, SystemMessage, AIMessage } from '@langchain/core/messages';
+import { createClient } from '@supabase/supabase-js';
 import { FoodItemType } from '@/components/FoodItem';
 import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
@@ -13,12 +17,10 @@ import {
   getCurrentTime,
   getWelcomeMessages,
   getInitialSuggestions,
-  generateResponse,
   generateSuggestions,
 } from '@/utils/chatUtils';
 import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin } from 'lucide-react';
 
 type Message = {
   message: string;
@@ -33,6 +35,37 @@ type CartItemType = {
 
 type OrderStatus = 'none' | 'placed' | 'confirmed' | 'preparing' | 'delivering' | 'delivered';
 
+// Replace the existing Supabase client initialization
+const supabaseClient = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
+
+// Replace the existing ChatOpenAI initialization
+const chatModel = new ChatOpenAI({
+  temperature: 0.7,
+  modelName: 'gpt-3.5-turbo',
+  openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY
+});
+
+// Add this after supabaseClient initialization
+supabaseClient
+  .from('chat_history')
+  .select('count')
+  .limit(1)
+  .then(response => {
+    if (response.error) {
+      console.error('Supabase connection error:', response.error);
+    } else {
+      console.log('Supabase connection successful');
+    }
+  });
+
+// After chatModel initialization
+if (!process.env.NEXT_PUBLIC_OPENAI_API_KEY) {
+  console.error('Missing OpenAI API key');
+}
+
 const Index = () => {
   const [messages, setMessages] = useState<Message[]>(getWelcomeMessages());
   const [suggestions, setSuggestions] = useState<string[]>(getInitialSuggestions());
@@ -43,61 +76,79 @@ const Index = () => {
   const menuSections = getMenuByCategory();
   const { toast } = useToast();
 
-  // Scroll to bottom of chat when messages change
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Simulate order progress for demo purposes
   useEffect(() => {
     let timeout: NodeJS.Timeout;
-    
     if (orderStatus === 'confirmed') {
-      // Move to preparing after 5 seconds
       timeout = setTimeout(() => {
         setOrderStatus('preparing');
         addSystemMessage("Your food is now being prepared by our chefs. It won't take long!");
       }, 5000);
     } else if (orderStatus === 'preparing') {
-      // Move to delivering after 8 seconds
       timeout = setTimeout(() => {
         setOrderStatus('delivering');
         addSystemMessage("Your order is on the way! You can track its progress in real-time.");
       }, 8000);
     } else if (orderStatus === 'delivering') {
-      // Move to delivered after 10 seconds
       timeout = setTimeout(() => {
         setOrderStatus('delivered');
         addSystemMessage("Your order has been delivered! Enjoy your meal. 😊");
       }, 10000);
     }
-    
     return () => clearTimeout(timeout);
   }, [orderStatus]);
 
-  const handleSendMessage = (message: string) => {
-    // Add user message
+  const handleSendMessage = async (message: string) => {
     const newUserMessage = {
       message,
       isUser: true,
       timestamp: getCurrentTime(),
     };
     setMessages((prevMessages) => [...prevMessages, newUserMessage]);
-    
-    // Generate and add AI response after a short delay to simulate thinking
-    setTimeout(() => {
-      const response = generateResponse(message);
+
+    try {
+      const messageHistory = messages.map(msg =>
+        msg.isUser ? new HumanMessage(msg.message) : new AIMessage(msg.message)
+      );
+      const systemMessage = new SystemMessage(
+        "You are a helpful AI assistant for a restaurant ordering system. Help users with menu items, recommendations, and placing orders."
+      );
+
+      const response = await chatModel.call([
+        systemMessage,
+        ...messageHistory,
+        new HumanMessage(message)
+      ]);
+
+      await supabaseClient
+        .from('chat_history')
+        .insert([{
+          user_message: message,
+          ai_response: response.content,
+          timestamp: new Date().toISOString()
+        }]);
+
       const botResponse = {
-        message: response,
+        message: typeof response.content === 'string' ? response.content : JSON.stringify(response.content),
         isUser: false,
         timestamp: getCurrentTime(),
       };
       setMessages((prevMessages) => [...prevMessages, botResponse]);
-      
-      // Generate new suggestions based on the response
-      const newSuggestions = generateSuggestions(response);
+
+      const responseText = typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
+      const newSuggestions = generateSuggestions(responseText);
       setSuggestions(newSuggestions);
-    }, 500);
+    } catch (error) {
+      console.error('Error processing message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process your message. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -116,7 +167,6 @@ const Index = () => {
   const handleAddToCart = (item: FoodItemType) => {
     setCartItems((prevItems) => {
       const existingItem = prevItems.find((cartItem) => cartItem.item.id === item.id);
-      
       if (existingItem) {
         return prevItems.map((cartItem) =>
           cartItem.item.id === item.id
@@ -151,35 +201,52 @@ const Index = () => {
     );
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (cartItems.length === 0) return;
-    
-    // Calculate a delivery time 30-45 minutes from now
+
     const now = new Date();
-    const deliveryMinutes = Math.floor(Math.random() * 15) + 30; // Random between 30-45 min
+    const deliveryMinutes = Math.floor(Math.random() * 15) + 30;
     const deliveryTime = new Date(now.getTime() + deliveryMinutes * 60000);
-    const formattedTime = deliveryTime.toLocaleTimeString([], { 
-      hour: 'numeric', 
+    const formattedTime = deliveryTime.toLocaleTimeString([], {
+      hour: 'numeric',
       minute: '2-digit'
     });
-    
+
     setOrderStatus('confirmed');
     setEstimatedDeliveryTime(formattedTime);
-    
+
     const orderDetails = cartItems
       .map((item) => `${item.quantity}x ${item.item.name}`)
       .join(", ");
-    
+
     const total = cartItems.reduce(
       (sum, item) => sum + item.item.price * item.quantity,
       0
-    ) + 3.99; // Add delivery fee
-    
+    ) + 3.99;
+
     addSystemMessage(
       `Thank you for your order! You've ordered: ${orderDetails}. Total: $${total.toFixed(2)}. Your order will arrive by ${formattedTime}.`
     );
-    
-    // Clear cart after checkout
+
+    try {
+      await supabaseClient
+        .from('orders')
+        .insert([{
+          items: cartItems,
+          total: total,
+          status: orderStatus,
+          estimated_delivery: formattedTime,
+          created_at: new Date().toISOString()
+        }]);
+    } catch (error) {
+      console.error('Error processing order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process your order. Please try again.",
+        variant: "destructive"
+      });
+    }
+
     setCartItems([]);
   };
 
@@ -187,20 +254,17 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-6xl mx-auto">
         <RestaurantHeader />
-
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Left side - Chat and Menu */}
           <div className="md:col-span-8">
             <Tabs defaultValue="chat" className="mb-6">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="chat">Chat with AI</TabsTrigger>
                 <TabsTrigger value="menu">Menu</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="chat" className="mt-4">
                 {/* Chat section */}
-                <div className="bg-white rounded-xl shadow-md border border-restaurant-muted/50 p-4">
-                  <div className="h-[400px] overflow-y-auto chat-scrollbar mb-4 p-2">
+                <div className="bg-white rounded-xl shadow-md border p-4 h-[600px] overflow-y-auto">
                     {messages.map((msg, index) => (
                       <ChatMessage
                         key={index}
@@ -209,70 +273,31 @@ const Index = () => {
                         timestamp={msg.timestamp}
                       />
                     ))}
-                    <div ref={chatEndRef} />
-                  </div>
-                  
-                  <SuggestionChips
-                    suggestions={suggestions}
-                    onSuggestionClick={handleSuggestionClick}
-                  />
-                  
-                  <div className="mt-4">
-                    <ChatInput onSendMessage={handleSendMessage} />
-                  </div>
+                  <div ref={chatEndRef} />
                 </div>
+                <SuggestionChips suggestions={suggestions} onSuggestionClick={handleSuggestionClick} />
+                <ChatInput onSendMessage={handleSendMessage} />
               </TabsContent>
-              
               <TabsContent value="menu" className="mt-4">
-                {/* Menu section */}
-                <div className="bg-white rounded-xl shadow-md border border-restaurant-muted/50 p-6">
-                  <h2 className="text-3xl font-bold mb-6 text-center text-restaurant-secondary">
-                    Our Menu
-                  </h2>
-                  
-                  {menuSections.map((section) => (
-                    <MenuSection
-                      key={section.category}
-                      title={section.category.charAt(0).toUpperCase() + section.category.slice(1)}
-                      items={section.items}
-                      onAddToCart={handleAddToCart}
-                    />
-                  ))}
-                </div>
+                {menuSections.map((section, index) => (
+                  <MenuSection
+                    key={index}
+                    title={section.category}
+                    items={section.items}
+                    onAddToCart={handleAddToCart}
+                  />
+                ))}
               </TabsContent>
             </Tabs>
-            
-            {/* Location section */}
-            {orderStatus !== 'none' && (
-              <div className="bg-white rounded-xl shadow-md border border-restaurant-muted/50 p-6">
-                <div className="flex items-center mb-4">
-                  <MapPin className="text-restaurant-primary mr-2" />
-                  <h2 className="text-xl font-semibold">Delivery Location</h2>
-                </div>
-                <div className="bg-gray-100 h-[200px] rounded-lg relative">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <p className="text-gray-500">Map view would be displayed here</p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
-          
-          {/* Right side - Cart and Order Status */}
           <div className="md:col-span-4 space-y-6">
+            <OrderStatusTracker status={orderStatus} estimatedTime={estimatedDeliveryTime} />
             <Cart
               items={cartItems}
               onIncrease={handleIncreaseQuantity}
               onDecrease={handleDecreaseQuantity}
               onCheckout={handleCheckout}
             />
-            
-            {orderStatus !== 'none' && (
-              <OrderStatusTracker
-                currentStage={orderStatus === 'placed' ? 'confirmed' : orderStatus}
-                estimatedDeliveryTime={estimatedDeliveryTime}
-              />
-            )}
           </div>
         </div>
       </div>

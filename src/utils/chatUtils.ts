@@ -1,16 +1,12 @@
-
-// Simple response generator for the AI chatbot
-// In a real app, this would be connected to an actual AI service
-
 import { format } from 'date-fns';
 import { foodMenu } from '@/data/foodMenu';
+import { conversationChain } from './llmChain';
+import { generateSuggestions as gs, formatMenuItems, checkDietary } from './chatUtils.helpers';
 
-// Get current formatted time
-export const getCurrentTime = () => {
-  return format(new Date(), 'h:mm a');
-};
+// Time formatting utility
+export const getCurrentTime = () => format(new Date(), 'h:mm a');
 
-// Welcome messages from the chatbot
+// Welcome messages with timestamp
 export const getWelcomeMessages = () => [
   {
     message: "👋 Hello! I'm FoodieBot, your personal food ordering assistant. What can I help you with today?",
@@ -24,7 +20,7 @@ export const getWelcomeMessages = () => [
   }
 ];
 
-// Initial suggestions for users
+// Default conversation starters
 export const getInitialSuggestions = () => [
   "Show me the menu",
   "What's popular?",
@@ -32,95 +28,74 @@ export const getInitialSuggestions = () => [
   "Start a new order"
 ];
 
-// Generate chatbot responses based on user input
-export const generateResponse = (userInput: string) => {
+// Main response generator with hybrid approach
+export const generateResponse = async (userInput: string) => {
   const input = userInput.toLowerCase();
   
-  // Check for menu related queries
-  if (input.includes('menu') || input.includes('food') || input.includes('eat')) {
-    return "I'd be happy to show you our menu! We have burgers, pizzas, salads, sides, and drinks. What are you in the mood for?";
+  // --- Instant Rule-based Responses ---
+  // Menu category queries
+  if (/menu|food|eat|order/i.test(input)) {
+    return "We offer burgers, pizzas, salads, sides and drinks. What would you like?";
   }
-  
-  // Check for specific menu categories
+
+  // Specific category handling
   if (input.includes('burger')) {
-    const burgers = foodMenu
-      .filter(item => item.category === 'burgers')
-      .map(item => item.name)
-      .join(', ');
-    return `Our burger selection includes: ${burgers}. Would you like to add any to your order?`;
+    const burgers = foodMenu.filter(item => item.category === 'burgers');
+    return `Our burgers: ${formatMenuItems(burgers)}. Try our ${burgers[0]?.name}!`;
   }
   
   if (input.includes('pizza')) {
-    const pizzas = foodMenu
-      .filter(item => item.category === 'pizzas')
-      .map(item => item.name)
-      .join(', ');
-    return `Our pizza menu has: ${pizzas}. Would you like to order one?`;
-  }
-  
-  if (input.includes('salad')) {
-    const salads = foodMenu
-      .filter(item => item.category === 'salads')
-      .map(item => item.name)
-      .join(', ');
-    return `For salads, we offer: ${salads}. They're fresh and delicious!`;
+    const pizzas = foodMenu.filter(item => item.category === 'pizzas');
+    return `Our pizzas: ${formatMenuItems(pizzas)}. Today's special: ${pizzas[0]?.name}!`;
   }
 
-  if (input.includes('drink')) {
-    const drinks = foodMenu
-      .filter(item => item.category === 'drinks')
-      .map(item => item.name)
-      .join(', ');
-    return `For drinks, we offer: ${drinks}. They're fresh and chilled!`;
+  // Dietary preferences
+  const dietaryFlag = checkDietary(input);
+  if (dietaryFlag) {
+    const items = foodMenu.filter(item => item[dietaryFlag]);
+    return items.length 
+      ? `${dietaryFlag.replace('is', '')} options: ${formatMenuItems(items)}`
+      : "We're updating our ${dietaryFlag} menu. Check back soon!";
   }
 
-  if (input.includes('side')) {
-    const sides = foodMenu
-      .filter(item => item.category === 'sides')
-      .map(item => item.name)
-      .join(', ');
-    return `For sides, we offer: ${sides}. They're fresh and delicious!`;
+  // Popular items
+  if (/popular|recommend|best/i.test(input)) {
+    const popular = foodMenu.filter(item => item.isPopular);
+    return popular.length
+      ? `Try these favorites: ${formatMenuItems(popular)}`
+      : "Our Classic Cheeseburger and Pepperoni Pizza are customer favorites!";
   }
-  
-  // Check for order related queries
-  if (input.includes('order') || input.includes('checkout')) {
-    return "Great! To place an order, you can select items from our menu and add them to your cart. When you're ready, click the Checkout button.";
+
+  // Delivery queries
+  if (/delivery|time|when/i.test(input)) {
+    return "Delivery takes 30-45 mins. Free for orders over $25!";
   }
-  
-  // Check for vegetarian options
-  if (input.includes('vegetarian') || input.includes('vegan')) {
-    return "Yes! We have vegetarian options. Our Veggie Burger and Vegetable Supreme Pizza are very popular. Would you like to see all vegetarian items?";
+
+  // --- LLM Fallback for Complex Queries ---
+  try {
+    const { response } = await conversationChain.call({ 
+      input: userInput,
+      context: {
+        currentTime: getCurrentTime(),
+        menuCategories: [...new Set(foodMenu.map(item => item.category))],
+        dailySpecial: foodMenu.find(item => item.isSpecial)?.name || 'Pepperoni Pizza'
+      }
+    });
+    return response;
+  } catch (error) {
+    console.error('LLM Error:', error);
+    return "I'm having trouble answering that. Ask about our menu or current specials!";
   }
-  
-  // Check for popular items
-  if (input.includes('popular') || input.includes('recommend') || input.includes('best')) {
-    return "Our most popular items are the Classic Cheeseburger, Pepperoni Pizza, and Caesar Salad. Would you like to add any of these to your order?";
-  }
-  
-  // Check for delivery time
-  if (input.includes('delivery') || input.includes('time') || input.includes('when')) {
-    return "Delivery usually takes 30-45 minutes, depending on your location and current demand. Once you place your order, you'll be able to track its status.";
-  }
-  
-  // Default response
-  return "I'm here to help with your food order. You can ask about our menu, place an order, or check your order status. What would you like to do?";
 };
 
-// Generate follow-up suggestions based on context
+// Context-aware suggestions
 export const generateSuggestions = (lastMessage: string) => {
   const message = lastMessage.toLowerCase();
   
-  if (message.includes('menu') || message.includes('food') || message.includes('drink')) {
-    return ["Show me burgers", "Pizza options", "Vegetarian items", "What drinks do you have?"];
-  }
+  // Quick return for common scenarios
+  if (message.includes('added to cart')) return ["Checkout now", "Add more items"];
+  if (message.includes('order confirmed')) return ["Track order", "Reorder"];
   
-  if (message.includes('burger') || message.includes('pizza') || message.includes('salad') || message.includes('drink') || message.includes('side')) {
-    return ["Show me sides", "Any drinks?", "Tell me more", "Add to cart"];
-  }
-  
-  if (message.includes('order') || message.includes('delivery')) {
-    return ["Track my order", "Modify my order", "Delivery time?", "Payment options"];
-  }
-  
-  return ["Show me the menu", "What's popular?", "Delivery time?", "Start new order"];
+  // Delegate to helpers for complex logic
+  return gs(message);
 };

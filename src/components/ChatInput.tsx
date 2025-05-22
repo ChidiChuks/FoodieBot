@@ -8,7 +8,7 @@ type ChatInputProps = {
   onSendMessage: (message: string) => void;
 };
 
-const ChatInput = ({ onSendMessage }: ChatInputProps) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }: ChatInputProps) => {
   const [message, setMessage] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {

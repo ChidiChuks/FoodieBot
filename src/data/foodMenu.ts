@@ -1,6 +1,20 @@
+type MenuItem = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category: 'burgers' | 'pizzas' | 'salads' | 'sides' | 'drinks';
+  isVegetarian?: boolean;
+  isPopular?: boolean;  // For customer favorites
+  isSpecial?: boolean;  // For daily specials
+  isVegan?: boolean;    // For vegan filtering
+};
+
+
 
 // Sample food menu data
-export const foodMenu = [
+export const foodMenu: MenuItem[] = [
   {
     id: '1',
     name: 'Classic Cheeseburger',
@@ -8,6 +22,7 @@ export const foodMenu = [
     price: 12.99,
     image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=500',
     category: 'burgers',
+    isPopular: true,
   },
   {
     id: '2',
@@ -16,6 +31,9 @@ export const foodMenu = [
     price: 11.99,
     image: 'https://images.unsplash.com/photo-1520072959219-c595dc870360?q=80&w=500',
     category: 'burgers',
+    isVegetarian: true,
+    isVegan: true,
+    isPopular: true,
   },
   {
     id: '3',
@@ -24,6 +42,7 @@ export const foodMenu = [
     price: 14.99,
     image: 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?q=80&w=500',
     category: 'burgers',
+    isSpecial: true,
   },
   {
     id: '4',
@@ -32,6 +51,8 @@ export const foodMenu = [
     price: 13.99,
     image: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?q=80&w=500',
     category: 'pizzas',
+    isVegetarian: true,
+    isPopular: true,
   },
   {
     id: '5',
@@ -48,6 +69,9 @@ export const foodMenu = [
     price: 15.99,
     image: 'https://images.unsplash.com/photo-1594007654729-407eedc4be65?q=80&w=500',
     category: 'pizzas',
+    isVegetarian: true,
+    isVegan: true,
+    isSpecial: true,
   },
   {
     id: '7',
@@ -64,6 +88,8 @@ export const foodMenu = [
     price: 10.99,
     image: 'https://images.unsplash.com/photo-1609167830220-7164aa360951?q=80&w=500',
     category: 'salads',
+    isVegetarian: true,
+    isPopular: true,
   },
   {
     id: '9',
@@ -72,6 +98,8 @@ export const foodMenu = [
     price: 4.99,
     image: 'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?q=80&w=500',
     category: 'sides',
+    isVegan: true,
+    isPopular: true,
   },
   {
     id: '10',
@@ -80,6 +108,7 @@ export const foodMenu = [
     price: 5.99,
     image: 'https://images.unsplash.com/photo-1639024471283-03518883512d?q=80&w=500',
     category: 'sides',
+    isVegetarian: true,
   },
   {
     id: '11',
@@ -88,6 +117,7 @@ export const foodMenu = [
     price: 6.99,
     image: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?q=80&w=500',
     category: 'drinks',
+    isPopular: true,
   },
   {
     id: '12',
@@ -96,11 +126,13 @@ export const foodMenu = [
     price: 3.99,
     image: 'https://images.unsplash.com/photo-1499638673689-79a0b5115d87?q=80&w=500',
     category: 'drinks',
+    isVegan: true,
   },
 ];
 
 export const getMenuByCategory = () => {
   const categories = Array.from(new Set(foodMenu.map(item => item.category)));
+  // const categories = ['burgers', 'pizzas', 'salads', 'sides', 'drinks'] as const;
   return categories.map(category => {
     return {
       category,
